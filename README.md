@@ -92,6 +92,7 @@ iex> Spreadsheet.parse(content, format: :binary)
 ### Data Type Handling
 
 The library automatically converts data types:
+
 - **Dates**: Converted to `NaiveDateTime` structs
 - **Numbers**: Converted to `Float` values
 - **Empty cells**: Returned as `nil`
@@ -135,10 +136,12 @@ Spreadsheet is built for performance and handles large files efficiently:
 Comprehensive benchmarks comparing Spreadsheet against other popular Elixir XLSX libraries show significant performance advantages:
 
 **Small Files (10 rows × 5 columns):**
+
 - **~11-12x faster** than pure Elixir implementations
 - **~160-600x less memory** usage
 
 **Large Files (10,000 rows × 20 columns):**
+
 - **~10-20x faster** parsing
 - **~200-1200x less memory** usage
 
@@ -169,7 +172,6 @@ Follow the [rustler_precompiled guide](https://hexdocs.pm/rustler_precompiled/pr
 3. Wait for all NIFs to be built
 4. Download precompiled NIFs: `mix rustler_precompiled.download Spreadsheet.Calamine --all`
 5. Release the package to Hex.pm
-
 
 ## Copyright and License
 
