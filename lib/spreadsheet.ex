@@ -49,8 +49,7 @@ defmodule Spreadsheet do
   """
   @spec sheet_names(binary(), keyword()) ::
           {:ok, list(String.t())} | {:error, String.t()}
-  def sheet_names(path_or_content, opts \\ [])
-      when is_binary(path_or_content) and is_list(opts) do
+  def sheet_names(path_or_content, opts \\ []) when is_binary(path_or_content) and is_list(opts) do
     format = Keyword.get(opts, :format, :filename)
     include_hidden = Keyword.get(opts, :hidden, true)
 
@@ -62,8 +61,7 @@ defmodule Spreadsheet do
         Calamine.sheet_names_from_binary(path_or_content, include_hidden)
 
       other ->
-        {:error,
-         "Invalid format option: #{inspect(other)}. Expected :filename or :binary"}
+        {:error, "Invalid format option: #{inspect(other)}. Expected :filename or :binary"}
     end
   end
 
@@ -129,8 +127,7 @@ defmodule Spreadsheet do
   """
   @spec parse(binary(), keyword()) ::
           {:ok, list() | list({String.t(), list()})} | {:error, binary()}
-  def parse(path_or_content, opts \\ [])
-      when is_binary(path_or_content) and is_list(opts) do
+  def parse(path_or_content, opts \\ []) when is_binary(path_or_content) and is_list(opts) do
     sheet_name = Keyword.get(opts, :sheet)
     format = Keyword.get(opts, :format, :filename)
 
@@ -145,8 +142,7 @@ defmodule Spreadsheet do
             Calamine.parse_from_binary(path_or_content, sheet_name)
 
           other ->
-            {:error,
-             "Invalid format option: #{inspect(other)}. Expected :filename or :binary"}
+            {:error, "Invalid format option: #{inspect(other)}. Expected :filename or :binary"}
         end
 
       case result do
@@ -191,8 +187,7 @@ defmodule Spreadsheet do
   @deprecated "Use sheet_names/2 with format: :binary instead"
   @spec sheet_names_from_binary(binary(), keyword()) ::
           {:ok, list(String.t())} | {:error, String.t()}
-  def sheet_names_from_binary(content, opts \\ [])
-      when is_binary(content) and is_list(opts) do
+  def sheet_names_from_binary(content, opts \\ []) when is_binary(content) and is_list(opts) do
     sheet_names(content, Keyword.put(opts, :format, :binary))
   end
 
@@ -212,6 +207,56 @@ defmodule Spreadsheet do
           {:ok, list()} | {:error, String.t()}
   def parse_from_binary(content, sheet_name) do
     parse(content, sheet: sheet_name, format: :binary)
+  end
+
+  @doc """
+  Parses a specific sheet and returns the data along with the range start offset.
+
+  This function is useful when you need to know the absolute cell coordinates
+  of the parsed data. Calamine trims leading empty rows and columns, so the
+  returned `start_row` and `start_col` tell you where the data actually begins
+  in the spreadsheet (0-indexed).
+
+  Returns `{:ok, {start_row, start_col, rows}}` or `{:error, reason}`.
+
+  ## Options
+
+    * `:sheet` - The name of the sheet to parse (required).
+    * `:format` - Specifies the input format. Either `:filename` (default) or `:binary`.
+
+  ## Examples
+
+      Spreadsheet.parse_with_range("sales.xlsx", sheet: "Q1 Data")
+      {:ok, {0, 2, [
+        ["Product", "Sales", "Date"],
+        ["Widget A", 1500.0, ~N[2024-01-15 00:00:00]]
+      ]}}
+  """
+  @spec parse_with_range(binary(), keyword()) ::
+          {:ok, {non_neg_integer(), non_neg_integer(), list()}} | {:error, binary()}
+  def parse_with_range(path_or_content, opts \\ []) when is_binary(path_or_content) and is_list(opts) do
+    sheet_name = Keyword.fetch!(opts, :sheet)
+    format = Keyword.get(opts, :format, :filename)
+
+    result =
+      case format do
+        :filename ->
+          Calamine.parse_from_path_with_range(path_or_content, sheet_name)
+
+        :binary ->
+          Calamine.parse_from_binary_with_range(path_or_content, sheet_name)
+
+        other ->
+          {:error, "Invalid format option: #{inspect(other)}. Expected :filename or :binary"}
+      end
+
+    case result do
+      {:ok, {start_row, start_col, rows}} ->
+        {:ok, {start_row, start_col, parse_rows(rows)}}
+
+      other ->
+        other
+    end
   end
 
   defp parse_rows(rows) do

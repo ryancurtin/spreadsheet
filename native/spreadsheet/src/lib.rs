@@ -89,6 +89,52 @@ fn parse_from_binary(content: Binary, sheet_name: &str) -> Result<Vec<Vec<Column
     }
 }
 
+#[rustler::nif]
+fn parse_from_path_with_range(
+    path: &str,
+    sheet_name: &str,
+) -> Result<(usize, usize, Vec<Vec<ColumnData>>), String> {
+    let result = open_workbook_auto(path);
+
+    match result {
+        Ok(mut workbook) => workbook
+            .worksheet_range(sheet_name)
+            .map_err(|e| e.to_string())
+            .map(|range| {
+                let start = range.start().unwrap_or((0, 0));
+                let rows = range
+                    .rows()
+                    .map(|row| row.iter().map(extract_column).collect::<Vec<_>>())
+                    .collect();
+                (start.0 as usize, start.1 as usize, rows)
+            }),
+        Err(e) => Err(e.to_string()),
+    }
+}
+
+#[rustler::nif]
+fn parse_from_binary_with_range(
+    content: Binary,
+    sheet_name: &str,
+) -> Result<(usize, usize, Vec<Vec<ColumnData>>), String> {
+    let result = open_workbook_auto_from_rs(Cursor::new(content.as_slice()));
+
+    match result {
+        Ok(mut workbook) => workbook
+            .worksheet_range(sheet_name)
+            .map_err(|e| e.to_string())
+            .map(|range| {
+                let start = range.start().unwrap_or((0, 0));
+                let rows = range
+                    .rows()
+                    .map(|row| row.iter().map(extract_column).collect::<Vec<_>>())
+                    .collect();
+                (start.0 as usize, start.1 as usize, rows)
+            }),
+        Err(e) => Err(e.to_string()),
+    }
+}
+
 #[derive(NifTaggedEnum)]
 enum ColumnData {
     Int(i64),
