@@ -30,8 +30,7 @@ defmodule Spreadsheet.Calamine do
     base_url: "#{github_url}/releases/download/v#{version}",
     version: version,
     targets: targets,
-    nif_versions: nif_versions,
-    force_build: true
+    nif_versions: nif_versions
 
   def sheet_names_from_binary(_content, _hidden),
     do: :erlang.nif_error(:nif_not_loaded)
